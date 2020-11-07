@@ -12,11 +12,11 @@ typedef HRESULT(__stdcall* Present)(IDXGISwapChain* pSwapChain, UINT SyncInterva
 Present oPresent = NULL;
 WNDPROC oWndProc;
 
-LRESULT __stdcall WndProc(const HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LRESULT __stdcall WndProc(const HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, uMsg, wParam, lParam))
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam))
         return true;
-    return CallWindowProc(oWndProc, hWnd, uMsg, wParam, lParam);
+    return CallWindowProc(oWndProc, hWnd, Msg, wParam, lParam);
 }
 
 HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
