@@ -14,4 +14,4 @@ injectable shared library
 
 Currently configured for DirectX 11
 
-Dependencies included are unmodified, except for DX11 config option set in kiero.h
+Dependencies included are unmodified, except for having [KIERO_INCLUDE_D3D11](include/kiero/kiero.h#L10) and [KIERO_USE_MINHOOK](include/kiero/kiero.h#L14) config options set in [kiero.h](include/kiero/kiero.h)
