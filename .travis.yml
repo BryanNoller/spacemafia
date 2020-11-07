@@ -1,0 +1,10 @@
+os: windows
+language: cpp
+env:
+  - MSBUILD_PATH="C:\Program Files (x86)\Microsoft Visual Studio\2019\BuildTools\MSBuild\Current\Bin"
+install:
+  - choco install visualstudio2019-workload-vctools
+script:
+  - export PATH=$PATH:$MSBUILD_PATH
+  - MSBuild.exe -nologo -p:Configuration=Release -p:Platform=x64 -t:venom venom.sln
+  - MSBuild.exe -nologo -p:Configuration=Release -p:Platform=x86 -t:venom venom.sln
