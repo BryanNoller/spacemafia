@@ -100,10 +100,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     case DLL_PROCESS_DETACH:
         kiero::shutdown();
         break;
-    case DLL_THREAD_ATTACH:
-        break;
-    case DLL_THREAD_DETACH:
-        break;
     }
     return TRUE;
 }
