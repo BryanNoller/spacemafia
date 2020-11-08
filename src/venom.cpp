@@ -45,8 +45,6 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
         ImGuiIO& io = ImGui::GetIO();
         io.IniFilename = NULL;
         io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
-        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-        //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
         ImGui::StyleColorsDark();
 
@@ -81,17 +79,14 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
     ImGui::EndFrame();
     ImGui::Render();
     context->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-    //context->ClearRenderTargetView(mainRenderTargetView, (float*)&clear_color);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
 DWORD WINAPI MainThread(LPVOID lpReserved)
 {
-    if (kiero::init(kiero::RenderType::D3D11) != kiero::Status::Success)
-        MessageBoxA(0, "kiero::init(D3D11) failed", "kiero init", 0);
-    else if (kiero::bind(8, (void**)&oPresent, hkPresent11) != kiero::Status::Success)
-        MessageBoxA(0, "kiero::bind(IDXGISwapChain::Present) failed", "kiero bind", 0);
+    if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success)
+        kiero::bind(8, (void**)&oPresent, hkPresent11);
     return TRUE;
 }
 
