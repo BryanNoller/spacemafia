@@ -76,7 +76,6 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
             ImGui::ShowDemoWindow(&show_demo_window);
     }
 
-    ImGui::EndFrame();
     ImGui::Render();
     context->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
