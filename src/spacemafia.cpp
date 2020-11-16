@@ -20,8 +20,8 @@ WNDPROC oWndProc;
 
 bool IsInGame()
 {
-    return JNFEHNLGIFF__TypeInfo->static_fields->Instance->fields._.GameState == DNAFMCDBMCI_JPCEFDHGHAK__Enum_Joined
-        || JNFEHNLGIFF__TypeInfo->static_fields->Instance->fields._.GameState == DNAFMCDBMCI_JPCEFDHGHAK__Enum_Started;
+    return AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
+        || AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
 }
 
 LRESULT __stdcall WndProc(const HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
