@@ -6,5 +6,5 @@ install:
   - choco install visualstudio2019-workload-vctools
 script:
   - export PATH=$PATH:$MSBUILD_PATH
-  - MSBuild.exe -nologo -p:Configuration=Release -p:Platform=x64 -t:venom venom.sln
-  - MSBuild.exe -nologo -p:Configuration=Release -p:Platform=x86 -t:venom venom.sln
+  - MSBuild.exe -nologo -p:Configuration=Release -p:Platform=x64 -t:spacemafia spacemafia.sln
+  - MSBuild.exe -nologo -p:Configuration=Release -p:Platform=x86 -t:spacemafia spacemafia.sln

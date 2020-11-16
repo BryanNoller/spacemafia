@@ -63,7 +63,7 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
         static bool show_demo_window = false;
         static ImVec4 color = ImVec4(0.788f, 0.00f, 0.259f, 1.00f);
 
-        ImGui::Begin("venom");
+        ImGui::Begin("spacemafia");
 
         ImGui::Text("Hello World");
         ImGui::Checkbox("show ImGui demo window", &show_demo_window);

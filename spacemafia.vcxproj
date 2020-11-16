@@ -22,7 +22,7 @@
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
     <ProjectGuid>{28cbe446-4883-42e1-bf52-e75a73da329b}</ProjectGuid>
-    <RootNamespace>venom</RootNamespace>
+    <RootNamespace>spacemafia</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -174,7 +174,7 @@
     <ClCompile Include="include\kiero\minhook\src\hde\hde64.c" />
     <ClCompile Include="include\kiero\minhook\src\hook.c" />
     <ClCompile Include="include\kiero\minhook\src\trampoline.c" />
-    <ClCompile Include="src\venom.cpp" />
+    <ClCompile Include="src\spacemafia.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

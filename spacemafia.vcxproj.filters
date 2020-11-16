@@ -110,7 +110,7 @@
     <ClCompile Include="include\kiero\minhook\src\trampoline.c">
       <Filter>kiero\minhook\src</Filter>
     </ClCompile>
-    <ClCompile Include="src\venom.cpp">
+    <ClCompile Include="src\spacemafia.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
