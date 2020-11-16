@@ -19,6 +19,15 @@
     <Filter Include="src">
       <UniqueIdentifier>{3bdadb0f-ef6b-45f3-b6f7-72e5a054bf01}</UniqueIdentifier>
     </Filter>
+    <Filter Include="src\il2cpp">
+      <UniqueIdentifier>{9dba5bed-1b83-4b57-9703-f1ac59005378}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\il2cpp\framework">
+      <UniqueIdentifier>{86f4989c-72a3-4b55-a5c3-534758003ff3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src\il2cpp\appdata">
+      <UniqueIdentifier>{0bec46de-fb24-4f20-b351-fdbe0ad52b5d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\imgui\imconfig.h">
@@ -72,6 +81,33 @@
     <ClInclude Include="include\kiero\minhook\include\MinHook.h">
       <Filter>kiero\minhook</Filter>
     </ClInclude>
+    <ClInclude Include="src\il2cpp\framework\helpers.h">
+      <Filter>src\il2cpp\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\framework\il2cpp-appdata.h">
+      <Filter>src\il2cpp\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\framework\il2cpp-init.h">
+      <Filter>src\il2cpp\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\framework\pch-il2cpp.h">
+      <Filter>src\il2cpp\framework</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-api-functions.h">
+      <Filter>src\il2cpp\appdata</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-api-functions-ptr.h">
+      <Filter>src\il2cpp\appdata</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-functions.h">
+      <Filter>src\il2cpp\appdata</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-types.h">
+      <Filter>src\il2cpp\appdata</Filter>
+    </ClInclude>
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-types-ptr.h">
+      <Filter>src\il2cpp\appdata</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\imgui\imgui.cpp">
@@ -112,6 +148,15 @@
     </ClCompile>
     <ClCompile Include="src\spacemafia.cpp">
       <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\il2cpp\framework\helpers.cpp">
+      <Filter>src\il2cpp\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="src\il2cpp\framework\il2cpp-init.cpp">
+      <Filter>src\il2cpp\framework</Filter>
+    </ClCompile>
+    <ClCompile Include="src\il2cpp\framework\pch-il2cpp.cpp">
+      <Filter>src\il2cpp\framework</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

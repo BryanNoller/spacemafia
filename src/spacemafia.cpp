@@ -1,3 +1,6 @@
+#include "pch-il2cpp.h"
+#define WIN32_LEAN_AND_MEAN
+#include "il2cpp-init.h"
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
@@ -6,11 +9,20 @@
 #include <stdio.h>
 #include <windows.h>
 
+using namespace app;
+extern const LPCWSTR LOG_FILE = L"il2cpp-log.txt"; // unused but required by il2cpp
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 typedef HRESULT(__stdcall* Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
 
 Present oPresent = NULL;
 WNDPROC oWndProc;
+
+bool IsInGame()
+{
+    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
+        || (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
+}
 
 LRESULT __stdcall WndProc(const HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
 {
@@ -94,6 +106,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
     switch (fdwReason) {
     case DLL_PROCESS_ATTACH:
         DisableThreadLibraryCalls(hinstDLL);
+        init_il2cpp();
         CreateThread(nullptr, 0, MainThread, hinstDLL, 0, nullptr);
         break;
     case DLL_PROCESS_DETACH:

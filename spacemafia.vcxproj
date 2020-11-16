@@ -88,7 +88,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -103,7 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -118,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -133,7 +133,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -160,6 +160,15 @@
     <ClInclude Include="include\kiero\minhook\src\hde\table32.h" />
     <ClInclude Include="include\kiero\minhook\src\hde\table64.h" />
     <ClInclude Include="include\kiero\minhook\src\trampoline.h" />
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-api-functions-ptr.h" />
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-api-functions.h" />
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-functions.h" />
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-types-ptr.h" />
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-types.h" />
+    <ClInclude Include="src\il2cpp\framework\helpers.h" />
+    <ClInclude Include="src\il2cpp\framework\il2cpp-appdata.h" />
+    <ClInclude Include="src\il2cpp\framework\il2cpp-init.h" />
+    <ClInclude Include="src\il2cpp\framework\pch-il2cpp.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\imgui\imgui.cpp" />
@@ -174,6 +183,9 @@
     <ClCompile Include="include\kiero\minhook\src\hde\hde64.c" />
     <ClCompile Include="include\kiero\minhook\src\hook.c" />
     <ClCompile Include="include\kiero\minhook\src\trampoline.c" />
+    <ClCompile Include="src\il2cpp\framework\helpers.cpp" />
+    <ClCompile Include="src\il2cpp\framework\il2cpp-init.cpp" />
+    <ClCompile Include="src\il2cpp\framework\pch-il2cpp.cpp" />
     <ClCompile Include="src\spacemafia.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
