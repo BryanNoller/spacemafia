@@ -24,7 +24,7 @@ namespace app {
 #undef DO_APP_FUNC
 
 // TypeInfo pointers
-#define DO_TYPEDEF(a, n) extern n ## __Class** n ## __TypeInfo
+#define DO_TYPEDEF(a, n) extern n ## __Class* n ## __TypeInfo
 namespace app {
 	#include "il2cpp-types-ptr.h"
 }

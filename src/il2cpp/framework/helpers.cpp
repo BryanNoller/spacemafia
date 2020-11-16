@@ -32,11 +32,3 @@ void NewConsole() {
     AllocConsole();
     freopen_s((FILE**) stdout, "CONOUT$", "w", stdout);
 }
-
-int randi(int lo, int hi)
-{
-    int n = hi - lo + 1;
-    int i = rand() % n;
-    if (i < 0) i = -i;
-    return lo + i;
-}
