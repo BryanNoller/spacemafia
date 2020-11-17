@@ -25,6 +25,14 @@ bool IsInGame()
         || AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
 }
 
+void Patch(BYTE* dst, BYTE* src, unsigned int size)
+{
+    DWORD oldprotect;
+    VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &oldprotect);
+    memcpy(dst, src, size);
+    VirtualProtect(dst, size, oldprotect, &oldprotect);
+}
+
 LRESULT __stdcall WndProc(const HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
@@ -84,6 +92,16 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
         {
             static bool unlockPets = false;
             static bool unlockPetsCheckbox = false;
+            const unsigned char unlockPetsBytes[] = {
+                0x55, // push ebp
+                0x8B, 0xEC, // mov ebp,esp
+                0x8B, 0x45, 0x08, // mov eax,[ebp+08]
+                0x8B, 0x40, 0x18, // mov eax,[eax+18]
+                0x8B, 0x40, 0x08, // mov eax,[eax+08]
+                0x5D, // pop ebp
+                0xC3 // ret
+            };
+            static unsigned char unlockPetsBytesOriginal[sizeof(unlockPetsBytes)];
 
             ImGui::Begin("spacemafia v0.1");
             ImGui::Text("press F5 to hide/show menu");
@@ -95,12 +113,13 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
             if (unlockPetsCheckbox) {
                 if (!unlockPets) {
                     unlockPets = true;
-                    // patch function
+                    memcpy(unlockPetsBytesOriginal, HatManager_GetUnlockedPets, sizeof(unlockPetsBytes));
+                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)unlockPetsBytes, sizeof(unlockPetsBytes));
                 }
             } else {
                 if (unlockPets) {
                     unlockPets = false;
-                    // restore function
+                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)unlockPetsBytesOriginal, sizeof(unlockPetsBytes));
                 }
             }
         }
