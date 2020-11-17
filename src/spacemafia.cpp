@@ -4,7 +4,7 @@
 #include "imgui.h"
 #include "imgui_impl_dx11.h"
 #include "imgui_impl_win32.h"
-#include "kiero.h" // KIERO_INCLUDE_D3D11=1 KIERO_USE_MINHOOK=1
+#include "kiero.h"
 #include <d3d11.h>
 #include <stdio.h>
 #include <windows.h>
@@ -17,6 +17,7 @@ typedef HRESULT(__stdcall* Present)(IDXGISwapChain* pSwapChain, UINT SyncInterva
 
 Present oPresent = NULL;
 WNDPROC oWndProc;
+bool showMenu = true;
 
 bool IsInGame()
 {
@@ -24,11 +25,20 @@ bool IsInGame()
         || AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
 }
 
-LRESULT __stdcall WndProc(const HWND hWnd, UINT Msg, WPARAM wParam, LPARAM lParam)
+LRESULT __stdcall WndProc(const HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, Msg, wParam, lParam))
+    switch (msg) {
+    case WM_KEYUP:
+        switch (wParam) {
+        case VK_F5:
+            showMenu = !showMenu;
+            break;
+        }
+        break;
+    }
+    if (showMenu && ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
-    return CallWindowProc(oWndProc, hWnd, Msg, wParam, lParam);
+    return CallWindowProc(oWndProc, hWnd, msg, wParam, lParam);
 }
 
 HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
@@ -66,31 +76,39 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
         init = true;
     }
 
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
+    if (showMenu) {
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
-    // Relpace this block with your code.
-    {
-        static bool show_demo_window = false;
-        static ImVec4 color = ImVec4(0.788f, 0.00f, 0.259f, 1.00f);
+        {
+            static bool unlockPets = false;
+            static bool unlockPetsCheckbox = false;
 
-        ImGui::Begin("spacemafia");
+            ImGui::Begin("spacemafia v0.1");
+            ImGui::Text("press F5 to hide/show menu");
 
-        ImGui::Text("Hello World");
-        ImGui::Checkbox("show ImGui demo window", &show_demo_window);
-        ImGui::ColorEdit3("color", (float*)&color);
-        ImGui::Text("average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+            ImGui::Checkbox("Unlock Pets", &unlockPetsCheckbox);
 
-        ImGui::End();
+            ImGui::End();
 
-        if (show_demo_window)
-            ImGui::ShowDemoWindow(&show_demo_window);
+            if (unlockPetsCheckbox) {
+                if (!unlockPets) {
+                    unlockPets = true;
+                    // patch function
+                }
+            } else {
+                if (unlockPets) {
+                    unlockPets = false;
+                    // restore function
+                }
+            }
+        }
+
+        ImGui::Render();
+        context->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
-
-    ImGui::Render();
-    context->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
