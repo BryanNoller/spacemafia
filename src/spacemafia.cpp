@@ -19,6 +19,34 @@ Present oPresent = NULL;
 WNDPROC oWndProc;
 bool showMenu = true;
 
+HatBehaviour__Array* hkHatManager_GetUnlockedHats(HatManager* __this, MethodInfo* method)
+{
+    return __this->fields.AllHats->fields._items;
+}
+
+PetBehaviour__Array* hkHatManager_GetUnlockedPets(HatManager* __this, MethodInfo* method)
+{
+    return __this->fields.AllPets->fields._items;
+}
+
+SkinData__Array* hkHatManager_GetUnlockedSkins(HatManager* __this, MethodInfo* method)
+{
+    return __this->fields.AllSkins->fields._items;
+}
+
+const unsigned char _compiledGetUnlockedHats[] = {
+    0x55, //             push ebp
+    0x8B, 0xEC, //       mov ebp,esp
+
+    0x8B, 0x45, 0x08, // mov eax,[ebp+08]  __this  HatManager
+    0x8B, 0x40, 0x1C, // mov eax,[eax+1C]  AllHats
+    0x8B, 0x40, 0x08, // mov eax,[eax+08]  _items  HatBehaviour__Array
+
+    0x5D, //             pop ebp
+    0xC3 //              ret
+};
+const unsigned int sizeHatManager_GetUnlockedHats = sizeof(_compiledGetUnlockedHats);
+
 bool IsInGame()
 {
     return AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
@@ -90,36 +118,56 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
         ImGui::NewFrame();
 
         {
-            static bool unlockPets = false;
-            static bool unlockPetsCheckbox = false;
-            const unsigned char unlockPetsBytes[] = {
-                0x55, // push ebp
-                0x8B, 0xEC, // mov ebp,esp
-                0x8B, 0x45, 0x08, // mov eax,[ebp+08]
-                0x8B, 0x40, 0x18, // mov eax,[eax+18]
-                0x8B, 0x40, 0x08, // mov eax,[eax+08]
-                0x5D, // pop ebp
-                0xC3 // ret
-            };
-            static unsigned char unlockPetsBytesOriginal[sizeof(unlockPetsBytes)];
+            static bool unlockHats = false, unlockHatsCheckbox = false;
+            static unsigned char originalHatManager_GetUnlockedHats[sizeHatManager_GetUnlockedHats];
+            static bool unlockPets = false, unlockPetsCheckbox = false;
+            static unsigned char originalHatManager_GetUnlockedPets[sizeHatManager_GetUnlockedHats];
+            static bool unlockSkins = false, unlockSkinsCheckbox = false;
+            static unsigned char originalHatManager_GetUnlockedSkins[sizeHatManager_GetUnlockedHats];
 
-            ImGui::Begin("spacemafia v0.1");
+            ImGui::Begin("spacemafia v0.2");
             ImGui::Text("press F5 to hide/show menu");
 
-            ImGui::Checkbox("Unlock Pets", &unlockPetsCheckbox);
+            ImGui::Checkbox("Unlock All Hats", &unlockHatsCheckbox);
+            ImGui::Checkbox("Unlock All Pets", &unlockPetsCheckbox);
+            ImGui::Checkbox("Unlock All Skins", &unlockSkinsCheckbox);
 
             ImGui::End();
 
+            if (unlockHatsCheckbox) {
+                if (!unlockHats) {
+                    unlockHats = true;
+                    memcpy(originalHatManager_GetUnlockedHats, HatManager_GetUnlockedHats, sizeHatManager_GetUnlockedHats);
+                    Patch((BYTE*)HatManager_GetUnlockedHats, (BYTE*)hkHatManager_GetUnlockedHats, sizeHatManager_GetUnlockedHats);
+                }
+            } else {
+                if (unlockHats) {
+                    unlockHats = false;
+                    Patch((BYTE*)HatManager_GetUnlockedHats, (BYTE*)originalHatManager_GetUnlockedHats, sizeHatManager_GetUnlockedHats);
+                }
+            }
             if (unlockPetsCheckbox) {
                 if (!unlockPets) {
                     unlockPets = true;
-                    memcpy(unlockPetsBytesOriginal, HatManager_GetUnlockedPets, sizeof(unlockPetsBytes));
-                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)unlockPetsBytes, sizeof(unlockPetsBytes));
+                    memcpy(originalHatManager_GetUnlockedPets, HatManager_GetUnlockedPets, sizeHatManager_GetUnlockedHats);
+                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)hkHatManager_GetUnlockedPets, sizeHatManager_GetUnlockedHats);
                 }
             } else {
                 if (unlockPets) {
                     unlockPets = false;
-                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)unlockPetsBytesOriginal, sizeof(unlockPetsBytes));
+                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)originalHatManager_GetUnlockedPets, sizeHatManager_GetUnlockedHats);
+                }
+            }
+            if (unlockSkinsCheckbox) {
+                if (!unlockSkins) {
+                    unlockSkins = true;
+                    memcpy(originalHatManager_GetUnlockedSkins, HatManager_GetUnlockedSkins, sizeHatManager_GetUnlockedHats);
+                    Patch((BYTE*)HatManager_GetUnlockedSkins, (BYTE*)hkHatManager_GetUnlockedSkins, sizeHatManager_GetUnlockedHats);
+                }
+            } else {
+                if (unlockSkins) {
+                    unlockSkins = false;
+                    Patch((BYTE*)HatManager_GetUnlockedSkins, (BYTE*)originalHatManager_GetUnlockedSkins, sizeHatManager_GetUnlockedHats);
                 }
             }
         }
