@@ -125,7 +125,7 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
             static bool unlockSkins = false, unlockSkinsCheckbox = false;
             static unsigned char originalHatManager_GetUnlockedSkins[sizeHatManager_GetUnlockedHats];
 
-            ImGui::Begin("spacemafia v0.2");
+            ImGui::Begin("spacemafia v1");
             ImGui::Text("press F5 to hide/show menu");
 
             ImGui::Checkbox("Unlock All Hats", &unlockHatsCheckbox);
