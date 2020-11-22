@@ -243,8 +243,6 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
             static bool allHats = false, allHatsEnabled = false;
             static bool allPets = false, allPetsEnabled = false;
             static bool allSkins = false, allSkinsEnabled = false;
-            static bool revealImpostors = false;
-            static bool noClipEnabled = false;
             static bool speedEnabled = false;
             static bool lightEnabled = false;
             static bool killCooldownEnabled = false;
@@ -264,9 +262,20 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
                 ImGui::Checkbox("All Pets", &allPetsEnabled);
                 ImGui::Checkbox("All Skins", &allSkinsEnabled);
 
-                ImGui::Checkbox("Reveal Impostors", &revealImpostors);
+                if (ImGui::Button("No Clip") && IsInGame() && PlayerControl__TypeInfo->static_fields->LocalPlayer) {
+                    auto comp = Component_get_gameObject((Component*)PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL);
+                    GameObject_set_layer(comp, LayerMask_NameToLayer(Marshal_PtrToStringAnsi((void*)"Ghost", NULL), NULL), NULL);
+                }
 
-                ImGui::Checkbox("No Clip", &noClipEnabled);
+                if (ImGui::Button("Reveal Impostors") && HasGameStarted()) {
+                    for (auto player : GetPlayers()) {
+                        auto data = PlayerControl_get_Data(player, NULL);
+
+                        TextRenderer* nameText = (TextRenderer*)(player->fields.RemainingEmergencies);
+                        if (data->fields.IsImpostor)
+                            nameText->fields.Color = Palette__TypeInfo->static_fields->ImpostorRed;
+                    }
+                }
             }
 
             if (ImGui::CollapsingHeader("Game Options", ImGuiTreeNodeFlags_DefaultOpen)) {
@@ -327,7 +336,7 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
                         float task_perc = 0.0f;
 
                         if (HasGameStarted()) {
-                            if (data->fields.IsImpostor && (revealImpostors || PlayerControl_get_Data(PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL)->fields.IsImpostor))
+                            if (data->fields.IsImpostor)
                                 nameColor = ColorToImVec4(Palette__TypeInfo->static_fields->ImpostorRed);
                             if (data->fields.IsDead)
                                 nameColor = ColorToImVec4(Palette__TypeInfo->static_fields->DisabledGrey);
@@ -344,12 +353,6 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
                                         incompl_tasks += 1.0f;
                                 }
                                 task_perc = (float)((int)(compl_tasks / (compl_tasks + incompl_tasks) * 100.f + .5f));
-                            }
-
-                            if (revealImpostors) {
-                                TextRenderer* nameText = (TextRenderer*)(player->fields.RemainingEmergencies);
-                                if (data->fields.IsImpostor && nameText->fields.Color.r == Palette__TypeInfo->static_fields->White.r)
-                                    nameText->fields.Color = Palette__TypeInfo->static_fields->ImpostorRed;
                             }
                         }
 
@@ -401,12 +404,6 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
 
             ImGui::End();
 
-            if (IsInGame()) {
-                if (noClipEnabled && PlayerControl__TypeInfo->static_fields->LocalPlayer) {
-                    auto comp = Component_get_gameObject((Component*)PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL);
-                    GameObject_set_layer(comp, LayerMask_NameToLayer(Marshal_PtrToStringAnsi((void*)"Ghost", NULL), NULL), NULL);
-                }
-            }
             if (HasGameStarted() && PlayerControl__TypeInfo->static_fields->GameOptions) {
                 if (speedEnabled)
                     PlayerControl__TypeInfo->static_fields->GameOptions->fields.PlayerSpeedMod = speed;
