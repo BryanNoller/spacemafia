@@ -1,0 +1,19 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+        "editor.largeFileOptimizations": false,
+        "C_Cpp.clang_format_path": "/usr/local/bin/clang-format",
+        "C_Cpp.clang_format_style": "webkit",
+        "C_Cpp.default.includePath": [
+            "include/kiero",
+            "include/imgui",
+            "include/detours",
+            "src/il2cpp/appdata",
+            "src/il2cpp/framework"
+        ]
+	}
+}
