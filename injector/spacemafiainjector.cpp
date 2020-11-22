@@ -7,7 +7,7 @@ using std::string;
 using std::vector;
 #include <Tlhelp32.h>
 
-int main(void)
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 {
     vector<string> processNames;
     PROCESSENTRY32 pe32;
