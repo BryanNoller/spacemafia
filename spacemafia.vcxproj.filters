@@ -108,6 +108,9 @@
     <ClInclude Include="src\il2cpp\appdata\il2cpp-types-ptr.h">
       <Filter>src\il2cpp\appdata</Filter>
     </ClInclude>
+    <ClInclude Include="src\il2cpp\appdata\il2cpp-metadata-version.h">
+      <Filter>src\il2cpp\appdata</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\imgui\imgui.cpp">
