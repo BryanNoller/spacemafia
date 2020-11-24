@@ -25,19 +25,19 @@ bool showMenu = true;
 
 bool IsInGame()
 {
-    return AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
-        || AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
+    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
+        || (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
 }
 
 bool HasGameStarted()
 {
-    return AmongUsClient__TypeInfo->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
+    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
 }
 
 std::vector<PlayerControl*> GetPlayers()
 {
     std::vector<PlayerControl*> players = std::vector<PlayerControl*>();
-    List_1_PlayerControl_* playerList = PlayerControl__TypeInfo->static_fields->AllPlayerControls;
+    List_1_PlayerControl_* playerList = (*PlayerControl__TypeInfo)->static_fields->AllPlayerControls;
 
     for (int i = 0; i < List_1_PlayerControl__get_Count(playerList, NULL); i++)
         players.push_back(List_1_PlayerControl__get_Item(playerList, i, NULL));
@@ -262,8 +262,8 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
                 ImGui::Checkbox("All Pets", &allPetsEnabled);
                 ImGui::Checkbox("All Skins", &allSkinsEnabled);
 
-                if (ImGui::Button("No Clip") && IsInGame() && PlayerControl__TypeInfo->static_fields->LocalPlayer) {
-                    auto comp = Component_get_gameObject((Component*)PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL);
+                if (ImGui::Button("No Clip") && IsInGame() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
+                    auto comp = Component_get_gameObject((Component*)(*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
                     GameObject_set_layer(comp, LayerMask_NameToLayer(Marshal_PtrToStringAnsi((void*)"Ghost", NULL), NULL), NULL);
                 }
 
@@ -273,7 +273,7 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
 
                         TextRenderer* nameText = (TextRenderer*)(player->fields.RemainingEmergencies);
                         if (data->fields.IsImpostor)
-                            nameText->fields.Color = Palette__TypeInfo->static_fields->ImpostorRed;
+                            nameText->fields.Color = (*Palette__TypeInfo)->static_fields->ImpostorRed;
                     }
                 }
             }
@@ -298,22 +298,22 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
                 ImGui::Checkbox("##killDistanceEnabled", &killDistanceEnabled);
                 //ImGui::SameLine();
                 //ImGui::SliderInt("##killDistance", &killDistance, 0, 2);
-                String__Array* killDistancesNames = GameOptionsData__TypeInfo->static_fields->KillDistanceStrings;
+                String__Array* killDistancesNames = (*GameOptionsData__TypeInfo)->static_fields->KillDistanceStrings;
                 for (int i = 0; i < maxKillDistance; i++) {
                     ImGui::SameLine();
                     ImGui::RadioButton(GetUTF8StringFromNETString(killDistancesNames->vector[i]).c_str(), &killDistance, i);
                 }
             }
 
-            if (ImGui::CollapsingHeader("Tasks", ImGuiTreeNodeFlags_DefaultOpen) && HasGameStarted() && PlayerControl__TypeInfo->static_fields->LocalPlayer && PlayerControl_get_Data(PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL)->fields.Tasks) {
-                List_1_GameData_TaskInfo_* tasks = PlayerControl_get_Data(PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL)->fields.Tasks;
+            if (ImGui::CollapsingHeader("Tasks", ImGuiTreeNodeFlags_DefaultOpen) && HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer && PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks) {
+                List_1_GameData_TaskInfo_* tasks = PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks;
 
                 for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); i++) {
                     GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
 
                     if (!task->fields.Complete) {
                         if (ImGui::Button(("complete##task" + std::to_string(task->fields.Id)).c_str()) && !task->fields.Complete) {
-                            PlayerControl_RpcCompleteTask(PlayerControl__TypeInfo->static_fields->LocalPlayer, task->fields.Id, NULL);
+                            PlayerControl_RpcCompleteTask((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, task->fields.Id, NULL);
                         }
 
                         ImGui::SameLine();
@@ -337,9 +337,9 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
 
                         if (HasGameStarted()) {
                             if (data->fields.IsImpostor)
-                                nameColor = ColorToImVec4(Palette__TypeInfo->static_fields->ImpostorRed);
+                                nameColor = ColorToImVec4((*Palette__TypeInfo)->static_fields->ImpostorRed);
                             if (data->fields.IsDead)
-                                nameColor = ColorToImVec4(Palette__TypeInfo->static_fields->DisabledGrey);
+                                nameColor = ColorToImVec4((*Palette__TypeInfo)->static_fields->DisabledGrey);
 
                             List_1_GameData_TaskInfo_* tasks = data->fields.Tasks;
                             float compl_tasks = 0.0f;
@@ -375,46 +375,33 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
                     }
                 }
                 if (ImGui::Button("teleport")) {
-                    if (IsInGame() && PlayerControl__TypeInfo->static_fields->LocalPlayer) {
+                    if (IsInGame() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
                         for (auto player : GetPlayers()) {
                             auto data = PlayerControl_get_Data(player, NULL);
 
                             if (selected == data->fields.ColorId) {
-                                Transform* localTransform = Component_get_transform((Component*)PlayerControl__TypeInfo->static_fields->LocalPlayer, NULL);
+                                Transform* localTransform = Component_get_transform((Component*)(*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
                                 Transform* playerTransform = Component_get_transform((Component*)player, NULL);
                                 Transform_set_position(localTransform, Transform_get_position(playerTransform, NULL), NULL);
                             }
                         }
                     }
                 }
-                /*
-                ImGui::SameLine();
-                if (ImGui::Button("kill")) {
-                    if (HasGameStarted() && PlayerControl__TypeInfo->static_fields->LocalPlayer) {
-                        for (auto player : playerList) {
-                            auto data = PlayerControl_get_Data(player, NULL);
-
-                            if (selected == data->fields.ColorId && !data->fields.IsDead)
-                                PlayerControl_RpcMurderPlayer(PlayerControl__TypeInfo->static_fields->LocalPlayer, player, NULL);
-                        }
-                    }
-                }
-                */
             }
 
             ImGui::End();
 
-            if (HasGameStarted() && PlayerControl__TypeInfo->static_fields->GameOptions) {
+            if (HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->GameOptions) {
                 if (speedEnabled)
-                    PlayerControl__TypeInfo->static_fields->GameOptions->fields.PlayerSpeedMod = speed;
+                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.PlayerSpeedMod = speed;
                 if (lightEnabled) {
-                    PlayerControl__TypeInfo->static_fields->GameOptions->fields.ImpostorLightMod = light;
-                    PlayerControl__TypeInfo->static_fields->GameOptions->fields.CrewLightMod = light;
+                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.ImpostorLightMod = light;
+                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.CrewLightMod = light;
                 }
                 if (killCooldownEnabled)
-                    PlayerControl__TypeInfo->static_fields->GameOptions->fields.KillCooldown = killCooldown;
+                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.KillCooldown = killCooldown;
                 if (killDistanceEnabled)
-                    PlayerControl__TypeInfo->static_fields->GameOptions->fields.KillDistance = killDistance;
+                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.KillDistance = killDistance;
             }
 
             static unsigned char originalHatManager_GetUnlockedHats[sizeHatManager_GetUnlockedHats];
