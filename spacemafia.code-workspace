@@ -6,6 +6,7 @@
 	],
 	"settings": {
         "editor.largeFileOptimizations": false,
+        "files.insertFinalNewline": true,
         "C_Cpp.clang_format_path": "/usr/local/bin/clang-format",
         "C_Cpp.clang_format_style": "webkit",
         "C_Cpp.default.includePath": [
