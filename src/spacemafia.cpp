@@ -2,6 +2,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <codecvt>
 #include <d3d11.h>
+#include <optional>
 #include <string>
 #include <vector>
 #include <windows.h>
@@ -16,57 +17,50 @@
 using namespace app;
 extern const LPCWSTR LOG_FILE = L"il2cpp-log.txt"; // unused but required by il2cpp
 
-extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
-typedef HRESULT(__stdcall* Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
+////////// STATE //////////
 
-Present oPresent = NULL;
-WNDPROC oWndProc;
-bool showMenu = true;
+bool ShowMenu = true;
 
-bool IsInGame()
-{
-    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
-        || (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
-}
+bool MarkImpostors = false;
+bool NoClip = false;
 
-bool HasGameStarted()
-{
-    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
-}
+bool ModifySpeed = false;
+bool ModifyLight = false;
+bool ModifyKillCooldown = false;
+bool ModifyKillDistance = false;
+float SpeedModifier = 1.90f;
+float LightModifier = 10.00f;
+float KillCooldownModifier = 0.001f;
+int KillDistanceModifier = 2;
 
-std::vector<PlayerControl*> GetPlayers()
-{
-    std::vector<PlayerControl*> players = std::vector<PlayerControl*>();
-    List_1_PlayerControl_* playerList = (*PlayerControl__TypeInfo)->static_fields->AllPlayerControls;
+//char Message[256] = "";
 
-    for (int i = 0; i < List_1_PlayerControl__get_Count(playerList, NULL); i++)
-        players.push_back(List_1_PlayerControl__get_Item(playerList, i, NULL));
-    return players;
-}
+std::optional<PlayerControl*> SelectedPlayer = std::nullopt;
+std::optional<PlayerControl*> MurderTarget = std::nullopt;
 
-std::string GetUTF8StringFromNETString(app::String* netString)
-{
-    std::wstring_convert<std::codecvt_utf8_utf16<char16_t, 0x10FFFF, std::codecvt_mode::little_endian>, char16_t> UTF16_TO_UTF8;
+////////// COLORS //////////
 
-    if (netString == NULL)
-        return NULL;
-
-    uint16_t* buffer = new uint16_t[netString->fields.m_stringLength + 1];
-    memcpy(buffer, &netString->fields.m_firstChar, netString->fields.m_stringLength * sizeof(uint16_t));
-    buffer[netString->fields.m_stringLength] = L'\0';
-    std::string newString = UTF16_TO_UTF8.to_bytes((const char16_t*)buffer);
-
-    delete[] buffer;
-
-    return newString;
-}
+enum PlayerColors {
+    RedColorId,
+    BlueColorId,
+    GreenColorId,
+    PinkColorId,
+    OrangeColorId,
+    YellowColorId,
+    BlackColorId,
+    WhiteColorId,
+    PurpleColorId,
+    BrownColorId,
+    CyanColorId,
+    LimeColorId,
+};
 
 ImVec4 ColorToImVec4(Color color)
 {
     return ImVec4(color.r, color.g, color.b, color.a);
 }
 
-ImVec4 rgb(BYTE r, BYTE g, BYTE b)
+ImVec4 rgb(unsigned char r, unsigned char g, unsigned char b)
 {
     return ImVec4((float)r / 255.0f, (float)g / 255.0f, (float)b / 255.0f, 1.0f);
 };
@@ -87,21 +81,6 @@ ImVec4 Cyan = rgb(0x38, 0xFE, 0xDB); // Bright Turquoise
 ImVec4 Lime = rgb(0x50, 0xEF, 0x39); // Screamin' Green
 ImVec4 Fortegreen = rgb(0x1D, 0x98, 0x53);
 ImVec4 Tan = rgb(0x50, 0xEF, 0x39);
-
-enum playerColors {
-    RedColorId,
-    BlueColorId,
-    GreenColorId,
-    PinkColorId,
-    OrangeColorId,
-    YellowColorId,
-    BlackColorId,
-    WhiteColorId,
-    PurpleColorId,
-    BrownColorId,
-    CyanColorId,
-    LimeColorId,
-};
 
 ImVec4 ColorFromId(unsigned int colorId)
 {
@@ -147,12 +126,248 @@ ImVec4 ColorFromId(unsigned int colorId)
     return color;
 }
 
-void Patch(BYTE* dst, BYTE* src, unsigned int size)
+////////// UTIL //////////
+
+bool IsInGame()
 {
-    DWORD oldprotect;
-    VirtualProtect(dst, size, PAGE_EXECUTE_READWRITE, &oldprotect);
-    memcpy(dst, src, size);
-    VirtualProtect(dst, size, oldprotect, &oldprotect);
+    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Joined
+        || (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
+}
+
+bool HasGameStarted()
+{
+    return (*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Started;
+}
+
+std::vector<PlayerControl*> GetPlayers()
+{
+    std::vector<PlayerControl*> players = std::vector<PlayerControl*>();
+    List_1_PlayerControl_* playerList = (*PlayerControl__TypeInfo)->static_fields->AllPlayerControls;
+
+    for (int i = 0; i < List_1_PlayerControl__get_Count(playerList, NULL); i++)
+        players.push_back(List_1_PlayerControl__get_Item(playerList, i, NULL));
+    return players;
+}
+
+std::string GetUTF8StringFromNETString(String* netString)
+{
+    std::wstring_convert<std::codecvt_utf8_utf16<char16_t, 0x10FFFF, std::codecvt_mode::little_endian>, char16_t> UTF16_TO_UTF8;
+
+    if (netString == NULL)
+        return NULL;
+
+    uint16_t* buffer = new uint16_t[netString->fields.m_stringLength + 1];
+    memcpy(buffer, &netString->fields.m_firstChar, netString->fields.m_stringLength * sizeof(uint16_t));
+    buffer[netString->fields.m_stringLength] = L'\0';
+    std::string newString = UTF16_TO_UTF8.to_bytes((const char16_t*)buffer);
+
+    delete[] buffer;
+
+    return newString;
+}
+
+////////// GUI //////////
+
+void RenderMenu(bool* p_open)
+{
+    ImGui::Begin("spacemafia v2", p_open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+
+    ImGui::Text("press F5 to hide/show menu");
+
+    if (ImGui::CollapsingHeader("Mods", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Checkbox("No Clip", &NoClip);
+        ImGui::Checkbox("Mark Impostors", &MarkImpostors);
+
+        if (ImGui::Button("Call Meeting") && HasGameStarted())
+            PlayerControl_CmdReportDeadBody((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL, NULL);
+    }
+
+    if (ImGui::CollapsingHeader("Game Options", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("Light Modifier");
+        ImGui::Checkbox("##ModifyLight", &ModifyLight);
+        ImGui::SameLine();
+        ImGui::SliderFloat("##LightModifier", &LightModifier, 0.0f, 10.0f);
+
+        ImGui::Text("Speed Modifier");
+        ImGui::Checkbox("##ModifySpeed", &ModifySpeed);
+        ImGui::SameLine();
+        ImGui::SliderFloat("##SpeedModifier", &SpeedModifier, 0.5f, 6.0f);
+
+        ImGui::Text("Kill Cooldown Modifier");
+        ImGui::Checkbox("##ModifyKillCooldown", &ModifyKillCooldown);
+        ImGui::SameLine();
+        ImGui::SliderFloat("##KillCooldownModifier", &KillCooldownModifier, 0.001f, 60.0f);
+
+        ImGui::Text("Kill Distance Modifier");
+        ImGui::Checkbox("##ModifyKillDistance", &ModifyKillDistance);
+        //ImGui::SameLine();
+        //ImGui::SliderInt("##KillDistanceModifier", &KillDistanceModifier, 0, 2);
+        String__Array* killDistancesNames = (*GameOptionsData__TypeInfo)->static_fields->KillDistanceStrings;
+        for (int i = 0; i < 3; i++) {
+            ImGui::SameLine();
+            ImGui::RadioButton(GetUTF8StringFromNETString(killDistancesNames->vector[i]).c_str(), &KillDistanceModifier, i);
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Tasks", ImGuiTreeNodeFlags_DefaultOpen) && HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer && PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks) {
+        List_1_GameData_TaskInfo_* tasks = PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks;
+
+        for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); i++) {
+            GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
+
+            if (ImGui::Button(("Complete##Task" + std::to_string(task->fields.Id)).c_str()) && !task->fields.Complete) {
+                PlayerControl_RpcCompleteTask((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, task->fields.Id, NULL);
+            }
+
+            ImGui::SameLine();
+
+            ImGui::TextColored(task->fields.Complete
+                    ? ImVec4(0.0F, 1.0F, 0.0F, 1.0F)
+                    : ColorToImVec4((*Palette__TypeInfo)->static_fields->DisabledGrey),
+                (std::string("Task #") + std::to_string(task->fields.Id)).c_str());
+        }
+    }
+
+    if (ImGui::CollapsingHeader("Players", ImGuiTreeNodeFlags_DefaultOpen) && IsInGame() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
+        for (auto player : GetPlayers()) {
+            auto data = PlayerControl_get_Data(player, NULL);
+            auto name = GetUTF8StringFromNETString(data->fields.PlayerName);
+
+            ImVec4 nameColor = WHITE;
+
+            if (HasGameStarted()) {
+                if (data->fields.IsImpostor && MarkImpostors)
+                    nameColor = ColorToImVec4((*Palette__TypeInfo)->static_fields->ImpostorRed);
+                if (data->fields.IsDead)
+                    nameColor = ColorToImVec4((*Palette__TypeInfo)->static_fields->DisabledGrey);
+            }
+
+            ImGui::PushStyleColor(ImGuiCol_Text, nameColor);
+            if (ImGui::RadioButton(name.c_str(), (SelectedPlayer.has_value() && player == SelectedPlayer.value()) ? true : false)) {
+                if (SelectedPlayer.has_value() && player == SelectedPlayer.value())
+                    SelectedPlayer = std::nullopt;
+                else
+                    SelectedPlayer = player;
+            }
+            ImGui::PopStyleColor(1);
+
+            if (HasGameStarted()) {
+                List_1_GameData_TaskInfo_* tasks = data->fields.Tasks;
+                float compl_tasks = 0.0f;
+                float incompl_tasks = 0.0f;
+                float task_perc = 0.0f;
+                if (List_1_GameData_TaskInfo__get_Count(tasks, NULL) > 0) {
+                    for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); ++i) {
+                        GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
+                        if (task->fields.Complete)
+                            compl_tasks += 1.0f;
+                        else
+                            incompl_tasks += 1.0f;
+                    }
+                    task_perc = (float)((int)(compl_tasks / (compl_tasks + incompl_tasks) * 100.f + .5f));
+                }
+                ImGui::SameLine(108.0f);
+                ImVec4 playerColor = ColorFromId(data->fields.ColorId);
+                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, playerColor);
+                ImGui::ProgressBar(task_perc * 0.01f, ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
+                ImGui::PopStyleColor(1);
+            }
+        }
+        if (ImGui::Button("Teleport")) {
+            if (SelectedPlayer.has_value()) {
+                Transform* localTransform = Component_get_transform((Component*)(*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
+                Transform* playerTransform = Component_get_transform((Component*)SelectedPlayer.value(), NULL);
+                Transform_set_position(localTransform, Transform_get_position(playerTransform, NULL), NULL);
+            }
+        }
+        if (HasGameStarted()) {
+            ImGui::SameLine();
+            if (ImGui::Button("Murder"))
+                MurderTarget = SelectedPlayer;
+        }
+
+        /*
+		static char Message[256] = "";
+		ImGui::Text("Message");
+		ImGui::SameLine();
+		if (ImGui::InputText("##Message", Message, IM_ARRAYSIZE(Message), ImGuiInputTextFlags_EnterReturnsTrue)) {
+			if (SelectedPlayer.has_value()) {
+				PlayerControl_RpcSendChat(SelectedPlayer.value(), Marshal_PtrToStringAnsi(Message, NULL), NULL);
+				Message[0] = '\0';
+			}
+		}
+		*/
+    }
+
+    ImGui::End();
+}
+
+////////// HOOKS //////////
+
+typedef HRESULT(__stdcall* Present)(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags);
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
+Present oPresent = NULL;
+WNDPROC oWndProc = NULL;
+void (*oKeyboardJoystick_Update)(KeyboardJoystick*, MethodInfo*);
+void (*oMeetingHud_Update)(MeetingHud*, MethodInfo*);
+void (*oPlayerControl_FixedUpdate)(PlayerControl*, MethodInfo*);
+HatBehaviour__Array* (*oHatManager_GetUnlockedHats)(HatManager*, MethodInfo*);
+PetBehaviour__Array* (*oHatManager_GetUnlockedPets)(HatManager*, MethodInfo*);
+SkinData__Array* (*oHatManager_GetUnlockedSkins)(HatManager*, MethodInfo*);
+
+void hkKeyboardJoystick_Update(KeyboardJoystick* __this, MethodInfo* method)
+{
+    if ((*AmongUsClient__TypeInfo)->static_fields->Instance->fields._.GameState == InnerNetClient_GameStates__Enum_Ended) {
+        SelectedPlayer = std::nullopt;
+        MurderTarget = std::nullopt;
+    }
+    if (IsInGame()) {
+        if (NoClip) {
+            auto comp = Component_get_gameObject((Component*)(*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
+            GameObject_set_layer(comp, LayerMask_NameToLayer(Marshal_PtrToStringAnsi((void*)"Ghost", NULL), NULL), NULL);
+        }
+    }
+    if (HasGameStarted()) {
+        if (MurderTarget.has_value()) {
+            auto player = (*PlayerControl__TypeInfo)->static_fields->LocalPlayer;
+            auto data = PlayerControl_get_Data(player, NULL);
+            if (data->fields.IsImpostor && !data->fields.IsDead) {
+                PlayerControl_RpcMurderPlayer(player, MurderTarget.value(), NULL);
+            }
+            MurderTarget = std::nullopt;
+        }
+        if (ModifySpeed)
+            (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.PlayerSpeedMod = SpeedModifier;
+        if (ModifyLight) {
+            (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.ImpostorLightMod = LightModifier;
+            (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.CrewLightMod = LightModifier;
+        }
+        if (ModifyKillCooldown)
+            (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.KillCooldown = KillCooldownModifier;
+        if (ModifyKillDistance)
+            (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.KillDistance = KillDistanceModifier;
+    }
+
+    oKeyboardJoystick_Update(__this, method);
+}
+
+void hkMeetingHud_Update(MeetingHud* __this, MethodInfo* method)
+{
+    oMeetingHud_Update(__this, method);
+}
+
+void hkPlayerControl_FixedUpdate(PlayerControl* __this, MethodInfo* method)
+{
+    if (HasGameStarted()) {
+        if (MarkImpostors) {
+            auto data = PlayerControl_get_Data(__this, NULL);
+            if (data->fields.IsImpostor)
+                __this->fields.nameText->fields.Color = (*Palette__TypeInfo)->static_fields->ImpostorRed;
+        }
+    }
+
+    oPlayerControl_FixedUpdate(__this, method);
 }
 
 HatBehaviour__Array* hkHatManager_GetUnlockedHats(HatManager* __this, MethodInfo* method)
@@ -170,36 +385,25 @@ SkinData__Array* hkHatManager_GetUnlockedSkins(HatManager* __this, MethodInfo* m
     return __this->fields.AllSkins->fields._items;
 }
 
-const unsigned char _compiledGetUnlockedHats[] = {
-    0x55, //             push ebp
-    0x8B, 0xEC, //       mov ebp,esp
-
-    0x8B, 0x45, 0x08, // mov eax,[ebp+08]  __this  HatManager
-    0x8B, 0x40, 0x1C, // mov eax,[eax+1C]  AllHats
-    0x8B, 0x40, 0x08, // mov eax,[eax+08]  _items  HatBehaviour__Array
-
-    0x5D, //             pop ebp
-    0xC3 //              ret
-};
-const unsigned int sizeHatManager_GetUnlockedHats = sizeof(_compiledGetUnlockedHats);
-
 LRESULT __stdcall WndProc(const HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     switch (msg) {
     case WM_KEYUP:
         switch (wParam) {
         case VK_F5:
-            showMenu = !showMenu;
+        case VK_INSERT:
+        case VK_DELETE:
+            ShowMenu = !ShowMenu;
             break;
         }
         break;
     }
-    if (showMenu && ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
+    if (ShowMenu && ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
     return CallWindowProc(oWndProc, hWnd, msg, wParam, lParam);
 }
 
-HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
+HRESULT __stdcall hkPresent(IDXGISwapChain* pSwapChain, UINT SyncInterval, UINT Flags)
 {
     static bool init = false;
     static DXGI_SWAP_CHAIN_DESC desc;
@@ -234,244 +438,48 @@ HRESULT __stdcall hkPresent11(IDXGISwapChain* pSwapChain, UINT SyncInterval, UIN
         init = true;
     }
 
-    if (showMenu) {
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
 
-        {
-            static bool allHats = false, allHatsEnabled = false;
-            static bool allPets = false, allPetsEnabled = false;
-            static bool allSkins = false, allSkinsEnabled = false;
-            static bool speedEnabled = false;
-            static bool lightEnabled = false;
-            static bool killCooldownEnabled = false;
-            static bool killDistanceEnabled = false;
-            static float speed = 1.90f;
-            static float light = 10.00f;
-            static float killCooldown = 0.001f;
-            const int maxKillDistance = 3;
-            static int killDistance = maxKillDistance - 1;
+    if (ShowMenu)
+        RenderMenu(&ShowMenu);
 
-            ImGui::Begin("spacemafia v1+", NULL, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
-
-            ImGui::Text("press F5 to hide/show menu");
-
-            if (ImGui::CollapsingHeader("Modifications", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Checkbox("All Hats", &allHatsEnabled);
-                ImGui::Checkbox("All Pets", &allPetsEnabled);
-                ImGui::Checkbox("All Skins", &allSkinsEnabled);
-
-                if (ImGui::Button("No Clip") && IsInGame() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
-                    auto comp = Component_get_gameObject((Component*)(*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
-                    GameObject_set_layer(comp, LayerMask_NameToLayer(Marshal_PtrToStringAnsi((void*)"Ghost", NULL), NULL), NULL);
-                }
-
-                if (ImGui::Button("Reveal Impostors") && HasGameStarted()) {
-                    for (auto player : GetPlayers()) {
-                        auto data = PlayerControl_get_Data(player, NULL);
-
-                        TextRenderer* nameText = (TextRenderer*)(player->fields.RemainingEmergencies);
-                        if (data->fields.IsImpostor)
-                            nameText->fields.Color = (*Palette__TypeInfo)->static_fields->ImpostorRed;
-                    }
-                }
-            }
-
-            if (ImGui::CollapsingHeader("Game Options", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Text("Light");
-                ImGui::Checkbox("##lightEnabled", &lightEnabled);
-                ImGui::SameLine();
-                ImGui::SliderFloat("##light", &light, 0.0f, 10.0f);
-
-                ImGui::Text("Speed");
-                ImGui::Checkbox("##speedEnabled", &speedEnabled);
-                ImGui::SameLine();
-                ImGui::SliderFloat("##speed", &speed, 0.5f, 6.0f);
-
-                ImGui::Text("Kill Cooldown");
-                ImGui::Checkbox("##killCooldownEnabled", &killCooldownEnabled);
-                ImGui::SameLine();
-                ImGui::SliderFloat("##killCooldown", &killCooldown, 0.001f, 60.0f);
-
-                ImGui::Text("Kill Distance");
-                ImGui::Checkbox("##killDistanceEnabled", &killDistanceEnabled);
-                //ImGui::SameLine();
-                //ImGui::SliderInt("##killDistance", &killDistance, 0, 2);
-                String__Array* killDistancesNames = (*GameOptionsData__TypeInfo)->static_fields->KillDistanceStrings;
-                for (int i = 0; i < maxKillDistance; i++) {
-                    ImGui::SameLine();
-                    ImGui::RadioButton(GetUTF8StringFromNETString(killDistancesNames->vector[i]).c_str(), &killDistance, i);
-                }
-            }
-
-            if (ImGui::CollapsingHeader("Tasks", ImGuiTreeNodeFlags_DefaultOpen) && HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer && PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks) {
-                List_1_GameData_TaskInfo_* tasks = PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks;
-
-                for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); i++) {
-                    GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
-
-                    if (!task->fields.Complete) {
-                        if (ImGui::Button(("complete##task" + std::to_string(task->fields.Id)).c_str()) && !task->fields.Complete) {
-                            PlayerControl_RpcCompleteTask((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, task->fields.Id, NULL);
-                        }
-
-                        ImGui::SameLine();
-
-                        ImGui::TextColored(ImVec4(0.0F, 1.0F, 0.0F, 1.0F), (std::string("task #") + std::to_string(task->fields.Id)).c_str());
-                    }
-                }
-            }
-
-            static int selected = 0;
-            if (ImGui::CollapsingHeader("Players", ImGuiTreeNodeFlags_DefaultOpen)) {
-                if (IsInGame()) {
-                    auto playerList = GetPlayers();
-
-                    for (auto player : playerList) {
-                        auto data = PlayerControl_get_Data(player, NULL);
-                        auto name = GetUTF8StringFromNETString(data->fields.PlayerName);
-
-                        ImVec4 nameColor = WHITE;
-                        float task_perc = 0.0f;
-
-                        if (HasGameStarted()) {
-                            if (data->fields.IsImpostor)
-                                nameColor = ColorToImVec4((*Palette__TypeInfo)->static_fields->ImpostorRed);
-                            if (data->fields.IsDead)
-                                nameColor = ColorToImVec4((*Palette__TypeInfo)->static_fields->DisabledGrey);
-
-                            List_1_GameData_TaskInfo_* tasks = data->fields.Tasks;
-                            float compl_tasks = 0.0f;
-                            float incompl_tasks = 0.0f;
-                            if (List_1_GameData_TaskInfo__get_Count(tasks, NULL) > 0) {
-                                for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); ++i) {
-                                    GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
-                                    if (task->fields.Complete)
-                                        compl_tasks += 1.0f;
-                                    else
-                                        incompl_tasks += 1.0f;
-                                }
-                                task_perc = (float)((int)(compl_tasks / (compl_tasks + incompl_tasks) * 100.f + .5f));
-                            }
-                        }
-
-                        int colorId = data->fields.ColorId;
-                        ImGui::RadioButton(("##player" + std::to_string(colorId)).c_str(), &selected, colorId);
-
-                        ImGui::SameLine();
-
-                        ImGui::PushStyleColor(ImGuiCol_Text, nameColor);
-                        ImGui::Text(name.c_str());
-                        ImGui::PopStyleColor(1);
-
-                        if (HasGameStarted()) {
-                            ImGui::SameLine(108.0f);
-                            ImVec4 playerColor = ColorFromId(data->fields.ColorId);
-                            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, playerColor);
-                            ImGui::ProgressBar(task_perc * 0.01f, ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
-                            ImGui::PopStyleColor(1);
-                        }
-                    }
-                }
-                if (ImGui::Button("teleport")) {
-                    if (IsInGame() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
-                        for (auto player : GetPlayers()) {
-                            auto data = PlayerControl_get_Data(player, NULL);
-
-                            if (selected == data->fields.ColorId) {
-                                Transform* localTransform = Component_get_transform((Component*)(*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
-                                Transform* playerTransform = Component_get_transform((Component*)player, NULL);
-                                Transform_set_position(localTransform, Transform_get_position(playerTransform, NULL), NULL);
-                            }
-                        }
-                    }
-                }
-            }
-
-            ImGui::End();
-
-            if (HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->GameOptions) {
-                if (speedEnabled)
-                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.PlayerSpeedMod = speed;
-                if (lightEnabled) {
-                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.ImpostorLightMod = light;
-                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.CrewLightMod = light;
-                }
-                if (killCooldownEnabled)
-                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.KillCooldown = killCooldown;
-                if (killDistanceEnabled)
-                    (*PlayerControl__TypeInfo)->static_fields->GameOptions->fields.KillDistance = killDistance;
-            }
-
-            static unsigned char originalHatManager_GetUnlockedHats[sizeHatManager_GetUnlockedHats];
-            static unsigned char originalHatManager_GetUnlockedPets[sizeHatManager_GetUnlockedHats];
-            static unsigned char originalHatManager_GetUnlockedSkins[sizeHatManager_GetUnlockedHats];
-            if (allHatsEnabled) {
-                if (!allHats) {
-                    allHats = true;
-                    memcpy(originalHatManager_GetUnlockedHats, HatManager_GetUnlockedHats, sizeHatManager_GetUnlockedHats);
-                    Patch((BYTE*)HatManager_GetUnlockedHats, (BYTE*)hkHatManager_GetUnlockedHats, sizeHatManager_GetUnlockedHats);
-                }
-            } else {
-                if (allHats) {
-                    allHats = false;
-                    Patch((BYTE*)HatManager_GetUnlockedHats, (BYTE*)originalHatManager_GetUnlockedHats, sizeHatManager_GetUnlockedHats);
-                }
-            }
-            if (allPetsEnabled) {
-                if (!allPets) {
-                    allPets = true;
-                    memcpy(originalHatManager_GetUnlockedPets, HatManager_GetUnlockedPets, sizeHatManager_GetUnlockedHats);
-                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)hkHatManager_GetUnlockedPets, sizeHatManager_GetUnlockedHats);
-                }
-            } else {
-                if (allPets) {
-                    allPets = false;
-                    Patch((BYTE*)HatManager_GetUnlockedPets, (BYTE*)originalHatManager_GetUnlockedPets, sizeHatManager_GetUnlockedHats);
-                }
-            }
-            if (allSkinsEnabled) {
-                if (!allSkins) {
-                    allSkins = true;
-                    memcpy(originalHatManager_GetUnlockedSkins, HatManager_GetUnlockedSkins, sizeHatManager_GetUnlockedHats);
-                    Patch((BYTE*)HatManager_GetUnlockedSkins, (BYTE*)hkHatManager_GetUnlockedSkins, sizeHatManager_GetUnlockedHats);
-                }
-            } else {
-                if (allSkins) {
-                    allSkins = false;
-                    Patch((BYTE*)HatManager_GetUnlockedSkins, (BYTE*)originalHatManager_GetUnlockedSkins, sizeHatManager_GetUnlockedHats);
-                }
-            }
-        }
-
-        ImGui::Render();
-        context->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-    }
+    ImGui::Render();
+    context->OMSetRenderTargets(1, &mainRenderTargetView, NULL);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     return oPresent(pSwapChain, SyncInterval, Flags);
 }
 
+////////// MAIN //////////
+
 DWORD WINAPI MainThread(LPVOID lpReserved)
 {
+    oKeyboardJoystick_Update = KeyboardJoystick_Update;
+    oMeetingHud_Update = MeetingHud_Update;
+    oPlayerControl_FixedUpdate = PlayerControl_FixedUpdate;
+    oHatManager_GetUnlockedHats = HatManager_GetUnlockedHats;
+    oHatManager_GetUnlockedPets = HatManager_GetUnlockedPets;
+    oHatManager_GetUnlockedSkins = HatManager_GetUnlockedSkins;
+
+    DetourTransactionBegin();
+    DetourUpdateThread(GetCurrentThread());
+
+    DetourAttach(&(PVOID&)oKeyboardJoystick_Update, hkKeyboardJoystick_Update);
+    //DetourAttach(&(PVOID&)oMeetingHud_Update, hkMeetingHud_Update);
+    DetourAttach(&(PVOID&)oPlayerControl_FixedUpdate, hkPlayerControl_FixedUpdate);
+    DetourAttach(&(PVOID&)oHatManager_GetUnlockedHats, hkHatManager_GetUnlockedHats);
+    DetourAttach(&(PVOID&)oHatManager_GetUnlockedPets, hkHatManager_GetUnlockedPets);
+    DetourAttach(&(PVOID&)oHatManager_GetUnlockedSkins, hkHatManager_GetUnlockedSkins);
+
     if (kiero::init(kiero::RenderType::D3D11) == kiero::Status::Success) {
-        //kiero::bind(8, (void**)&oPresent, hkPresent11);
+        //kiero::bind(8, (void**)&oPresent, hkPresent);
         oPresent = (Present)kiero::getMethodsTable()[8];
-        if (oPresent == NULL) {
-            return FALSE;
-        }
-
-        DetourTransactionBegin();
-        DetourUpdateThread(GetCurrentThread());
-
-        if (DetourAttach(&(PVOID&)oPresent, hkPresent11) != NO_ERROR) {
-            return FALSE;
-        }
-
-        if (DetourTransactionCommit() != NO_ERROR) {
-            return FALSE;
-        }
+        if (oPresent)
+            DetourAttach(&(PVOID&)oPresent, hkPresent);
     }
+
+    DetourTransactionCommit();
     return TRUE;
 }
 
@@ -484,7 +492,6 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
         CreateThread(nullptr, 0, MainThread, hinstDLL, 0, nullptr);
         break;
     case DLL_PROCESS_DETACH:
-        kiero::shutdown();
         break;
     }
     return TRUE;

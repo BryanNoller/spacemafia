@@ -86,10 +86,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;_DEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32;_DEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\detours;$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4359</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -103,10 +104,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>WIN32;NDEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;WIN32;NDEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)include\detours;$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4359</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -121,10 +123,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;_DEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\detours;$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4359</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -138,10 +141,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>NDEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_SILENCE_CXX17_CODECVT_HEADER_DEPRECATION_WARNING;NDEBUG;IL2CPPDLL_EXPORTS;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include\detours;$(ProjectDir)include\kiero;$(ProjectDir)include\imgui;$(ProjectDir)src\il2cpp\framework;$(ProjectDir)src\il2cpp\appdata</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4359</DisableSpecificWarnings>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
