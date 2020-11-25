@@ -10,7 +10,9 @@ injector code [spacemafiainjector.cpp](injector/spacemafiainjector.cpp)
 
 - Run the game.
 - Wait until it has fully loaded.
-- Run the injector.
+- Run the injector (or any other dll injector) to inject spacemafia.dll into Among Us.
+
+There is no error checking whatsoever currently. If your using a different version of the game than intended, the game will just crash.
 
 ---
 
