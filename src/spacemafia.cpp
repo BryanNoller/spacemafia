@@ -170,7 +170,7 @@ std::string GetUTF8StringFromNETString(String* netString)
 
 void RenderMenu(bool* p_open)
 {
-    ImGui::Begin("spacemafia v2", p_open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
+    ImGui::Begin("spacemafia v2.1", p_open, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoScrollbar);
 
     ImGui::Text("press F5 to hide/show menu");
 
@@ -209,28 +209,38 @@ void RenderMenu(bool* p_open)
         }
     }
 
-    if (ImGui::CollapsingHeader("Tasks", ImGuiTreeNodeFlags_DefaultOpen) && HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer && PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks) {
-        List_1_GameData_TaskInfo_* tasks = PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL)->fields.Tasks;
+    if (ImGui::CollapsingHeader("Tasks", ImGuiTreeNodeFlags_DefaultOpen) && HasGameStarted() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
+        auto data = PlayerControl_get_Data((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, NULL);
+        if (data) {
+            List_1_GameData_TaskInfo_* tasks = data->fields.Tasks;
+            if (tasks) {
+                for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); i++) {
+                    GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
+                    if (!task) {
+                        continue;
+                    }
 
-        for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); i++) {
-            GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
+                    if (ImGui::Button(("Complete##Task" + std::to_string(task->fields.Id)).c_str()) && !task->fields.Complete) {
+                        PlayerControl_RpcCompleteTask((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, task->fields.Id, NULL);
+                    }
 
-            if (ImGui::Button(("Complete##Task" + std::to_string(task->fields.Id)).c_str()) && !task->fields.Complete) {
-                PlayerControl_RpcCompleteTask((*PlayerControl__TypeInfo)->static_fields->LocalPlayer, task->fields.Id, NULL);
+                    ImGui::SameLine();
+
+                    ImGui::TextColored(task->fields.Complete
+                            ? ImVec4(0.0F, 1.0F, 0.0F, 1.0F)
+                            : ColorToImVec4((*Palette__TypeInfo)->static_fields->DisabledGrey),
+                        (std::string("Task #") + std::to_string(task->fields.Id)).c_str());
+                }
             }
-
-            ImGui::SameLine();
-
-            ImGui::TextColored(task->fields.Complete
-                    ? ImVec4(0.0F, 1.0F, 0.0F, 1.0F)
-                    : ColorToImVec4((*Palette__TypeInfo)->static_fields->DisabledGrey),
-                (std::string("Task #") + std::to_string(task->fields.Id)).c_str());
         }
     }
 
     if (ImGui::CollapsingHeader("Players", ImGuiTreeNodeFlags_DefaultOpen) && IsInGame() && (*PlayerControl__TypeInfo)->static_fields->LocalPlayer) {
         for (auto player : GetPlayers()) {
             auto data = PlayerControl_get_Data(player, NULL);
+            if (!data) {
+                continue;
+            }
             auto name = GetUTF8StringFromNETString(data->fields.PlayerName);
 
             ImVec4 nameColor = WHITE;
@@ -253,24 +263,26 @@ void RenderMenu(bool* p_open)
 
             if (HasGameStarted()) {
                 List_1_GameData_TaskInfo_* tasks = data->fields.Tasks;
-                float compl_tasks = 0.0f;
-                float incompl_tasks = 0.0f;
-                float task_perc = 0.0f;
-                if (List_1_GameData_TaskInfo__get_Count(tasks, NULL) > 0) {
-                    for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); ++i) {
-                        GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
-                        if (task->fields.Complete)
-                            compl_tasks += 1.0f;
-                        else
-                            incompl_tasks += 1.0f;
+                if (tasks) {
+                    float compl_tasks = 0.0f;
+                    float incompl_tasks = 0.0f;
+                    float task_perc = 0.0f;
+                    if (List_1_GameData_TaskInfo__get_Count(tasks, NULL) > 0) {
+                        for (int i = 0; i < List_1_GameData_TaskInfo__get_Count(tasks, NULL); ++i) {
+                            GameData_TaskInfo* task = List_1_GameData_TaskInfo__get_Item(tasks, i, NULL);
+                            if (task->fields.Complete)
+                                compl_tasks += 1.0f;
+                            else
+                                incompl_tasks += 1.0f;
+                        }
+                        task_perc = (float)((int)(compl_tasks / (compl_tasks + incompl_tasks) * 100.f + .5f));
                     }
-                    task_perc = (float)((int)(compl_tasks / (compl_tasks + incompl_tasks) * 100.f + .5f));
+                    ImGui::SameLine(108.0f);
+                    ImVec4 playerColor = ColorFromId(data->fields.ColorId);
+                    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, playerColor);
+                    ImGui::ProgressBar(task_perc * 0.01f, ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
+                    ImGui::PopStyleColor(1);
                 }
-                ImGui::SameLine(108.0f);
-                ImVec4 playerColor = ColorFromId(data->fields.ColorId);
-                ImGui::PushStyleColor(ImGuiCol_PlotHistogram, playerColor);
-                ImGui::ProgressBar(task_perc * 0.01f, ImVec2(ImGui::GetContentRegionAvailWidth(), 0));
-                ImGui::PopStyleColor(1);
             }
         }
         if (ImGui::Button("Teleport")) {
